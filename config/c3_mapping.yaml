@@ -1,0 +1,45 @@
+canonical_columns:
+  - iso2
+  - iso3
+  - country_name
+  - official_name
+  - capital
+  - region
+  - subregion
+  - population
+  - area_km2
+  - gdp_usd
+  - density_per_km2
+  - gdp_per_capita_usd
+  - currencies
+  - languages
+  - source_count
+  - sources
+  - processed_at
+
+country_aliases:
+  "czechia": "czech republic"
+  "turkiye": "turkey"
+  "russian federation": "russia"
+  "united states of america": "united states"
+  "viet nam": "vietnam"
+  "republic of korea": "south korea"
+  "democratic republic of the congo": "dr congo"
+  "congo democratic republic": "dr congo"
+
+source_priority:
+  country_name: [file, api, database, bigdata, scraping]
+  official_name: [api]
+  capital: [api]
+  region: [database, api]
+  subregion: [database, api]
+  population: [bigdata, scraping, api]
+  area_km2: [bigdata, api]
+  gdp_usd: [bigdata]
+  currencies: [api]
+  languages: [api]
+
+quality:
+  mandatory_columns: [iso2, iso3, country_name]
+  unique_columns: [iso2, iso3]
+  minimum_source_count: 1
