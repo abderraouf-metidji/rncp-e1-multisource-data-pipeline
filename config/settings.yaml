@@ -1,0 +1,20 @@
+project:
+  name: "RNCP C1 - Referentiel automatise des pays"
+  user_agent: "RNCP-Countries-Pipeline/1.0 (educational project)"
+  timeout_seconds: 30
+  retries: 3
+sources:
+  api:
+    url: "https://api.restcountries.com/countries"
+  scraping:
+    url: "https://en.wikipedia.org/wiki/List_of_countries_and_dependencies_by_population"
+    table_id: "thetable"
+  file:
+    path: "data/input/countries_iso.csv"
+  bigdata:
+    input_csv: "data/input/country_indicators.csv"
+    parquet_path: "data/input/country_indicators.parquet"
+    limit: 10000
+output:
+  raw_directory: "data/raw"
+  log_file: "data/logs/pipeline.log"
