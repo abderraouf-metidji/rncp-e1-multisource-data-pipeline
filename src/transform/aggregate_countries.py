@@ -13,6 +13,8 @@ import numpy as np
 import pandas as pd
 import yaml
 
+from src.common import sha256_file
+
 ROOT_DIR = Path(__file__).resolve().parents[2]
 RAW_DIR = ROOT_DIR / "data" / "raw"
 PROCESSED_DIR = ROOT_DIR / "data" / "processed"
@@ -45,6 +47,38 @@ def latest_file(directory: Path, patterns: Iterable[str], required: bool = True)
             raise FileNotFoundError(f"Aucun fichier trouve dans {directory} pour {list(patterns)}")
         return None
     return max(candidates, key=lambda path: path.stat().st_mtime)
+
+
+def manifest_outputs(manifest_path: Path, source_names: set[str]) -> dict[str, Path]:
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if not isinstance(manifest, dict) or manifest.get("errors") or not isinstance(manifest.get("results"), list):
+        raise ValueError(f"Exécution C1 incomplète : {manifest_path}")
+
+    results = manifest["results"]
+    if len(results) != len(source_names):
+        raise ValueError(f"Le manifeste C1 ne contient pas les cinq sources : {manifest_path}")
+
+    selected: dict[str, Path] = {}
+    for entry in results:
+        if not isinstance(entry, dict):
+            raise ValueError(f"Entrée invalide dans le manifeste C1 : {manifest_path}")
+        source = entry.get("source")
+        if not isinstance(source, str) or source not in source_names or source in selected or entry.get("status") != "success":
+            raise ValueError(f"Source absente, dupliquée ou en échec dans {manifest_path}")
+        if not isinstance(entry.get("output_file"), str):
+            raise ValueError(f"Chemin de sortie absent pour {source}")
+        path = (ROOT_DIR / entry["output_file"]).resolve()
+        if not path.is_relative_to((RAW_DIR / source).resolve()) or not path.is_file():
+            raise ValueError(f"Sortie RAW absente ou hors du dossier de {source}: {path}")
+        if path.stat().st_size != entry.get("bytes") or sha256_file(path) != entry.get("sha256"):
+            raise ValueError(f"Sortie RAW modifiée depuis le manifeste C1 : {path}")
+        if not isinstance(entry.get("rows"), int) or entry["rows"] < 1:
+            raise ValueError(f"Sortie RAW vide pour {source}")
+        selected[source] = path
+
+    if set(selected) != source_names:
+        raise ValueError(f"Le manifeste C1 ne contient pas les cinq sources : {manifest_path}")
+    return selected
 
 
 def normalize_text(value: Any) -> str | None:
@@ -260,10 +294,14 @@ def discover_and_load(config: dict[str, Any], allow_missing: bool) -> tuple[dict
         "database": (RAW_DIR / "database", ["countries_database_*.parquet"], standardize_database, not allow_missing),
         "bigdata": (RAW_DIR / "bigdata", ["country_indicators_*.parquet"], standardize_bigdata, not allow_missing),
     }
+    selected = None
+    if not allow_missing:
+        manifest_path = latest_file(RAW_DIR, ["manifest_*.json"])
+        selected = manifest_outputs(manifest_path, set(specifications))
     sources: dict[str, pd.DataFrame] = {}
     lineage: dict[str, str] = {}
     for name, (directory, patterns, loader, required) in specifications.items():
-        path = latest_file(directory, patterns, required=required)
+        path = selected[name] if selected is not None else latest_file(directory, patterns, required=required)
         if path is None:
             continue
         sources[name] = loader(path, aliases)

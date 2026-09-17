@@ -42,7 +42,7 @@ Le [guide des preuves](guide_preuves.md) donne les noms de captures. Les fichier
 1. Le [rapport C1 PDF](C1_rapport.pdf) est un **brouillon**. Sa description de la réponse JSON doit être alignée sur `data.objects` de l'API v5 et préciser que monnaies, langues, capitale et superficie sont converties depuis les structures v5. Le CSV est maintenant refusé si des codes ISO sont dupliqués, au lieu de les supprimer silencieusement. Les mentions de preuves et de résultats doivent être revérifiées après exécution.
 2. La clé REST Countries `rc_live_demo` renvoie un exemple et ne permet pas l'extraction complète. La commande C1 nécessite une clé personnelle dans `.env`.
 3. Les données d'entrée locales sont un petit exemple reproductible ; DuckDB et Parquet démontrent la technologie, pas un volume massif.
-4. Le script C3 en mode `--allow-missing` sert au développement. Il ne prouve pas l'agrégation des cinq sources.
+4. Le script C3 en mode `--allow-missing` sert au développement. Il ne prouve pas l'agrégation des cinq sources. Le mode final utilise le dernier manifeste C1 complet et vérifie les empreintes des cinq fichiers retenus.
 5. Les tests C2, C4 et C5 contrôlent principalement les contrats et structures sans PostgreSQL réel. Capturer séparément une exécution de bout en bout.
 6. Pour C5, HTTP Basic convient à une démonstration locale. Dès que l'API est exposée sur un réseau, utiliser HTTPS et des identifiants non triviaux.
 

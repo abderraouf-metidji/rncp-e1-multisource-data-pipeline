@@ -39,7 +39,7 @@ Pendant le développement, si PostgreSQL n'est pas encore disponible :
 python -m src.transform.aggregate_countries --allow-missing
 ```
 
-Le mode `--allow-missing` sert uniquement aux tests intermédiaires. La preuve finale doit utiliser les cinq sources.
+Le mode `--allow-missing` sert uniquement aux tests intermédiaires. Sans cette option, C3 lit les cinq fichiers désignés par le dernier manifeste C1, vérifie leur empreinte SHA-256 et refuse une exécution incomplète. La preuve finale doit utiliser un manifeste contenant cinq succès.
 
 ## Sorties
 

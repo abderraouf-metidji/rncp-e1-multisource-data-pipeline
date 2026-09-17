@@ -1,7 +1,11 @@
 from pathlib import Path
+import json
 
 import pandas as pd
+import pytest
 
+from src.common import sha256_file
+from src.transform import aggregate_countries as aggregation
 from src.transform.aggregate_countries import (
     merge_sources,
     normalize_country_key,
@@ -54,3 +58,55 @@ def test_quality_report_detects_duplicates():
     report = quality_report(frame, config, {"file": frame})
     assert report["status"] == "failed"
     assert report["checks"]["duplicates"]["iso3"] == 1
+
+
+def test_final_aggregation_uses_one_complete_manifest(tmp_path, monkeypatch):
+    raw_dir = tmp_path / "data" / "raw"
+    monkeypatch.setattr(aggregation, "ROOT_DIR", tmp_path)
+    monkeypatch.setattr(aggregation, "RAW_DIR", raw_dir)
+    names = ("file", "api", "scraping", "database", "bigdata")
+    results = []
+    for name in names:
+        directory = raw_dir / name
+        directory.mkdir(parents=True)
+        path = directory / f"{name}_selected.json"
+        path.write_text(name, encoding="utf-8")
+        results.append({
+            "source": name, "status": "success", "output_file": str(path.relative_to(tmp_path)),
+            "rows": 1, "bytes": path.stat().st_size, "sha256": sha256_file(path),
+        })
+        monkeypatch.setattr(
+            aggregation,
+            f"standardize_{name}",
+            lambda selected_path, aliases: pd.DataFrame({"path": [str(selected_path)]}),
+        )
+
+    stray = raw_dir / "api" / "countries_api_newer.json"
+    stray.write_text("newer", encoding="utf-8")
+    manifest = raw_dir / "manifest_complete.json"
+    manifest.write_text(json.dumps({"results": results, "errors": []}), encoding="utf-8")
+
+    sources, lineage = aggregation.discover_and_load({}, allow_missing=False)
+
+    assert set(sources) == set(names)
+    assert sources["api"].loc[0, "path"] == str(raw_dir / "api" / "api_selected.json")
+    assert lineage["api"] == str((raw_dir / "api" / "api_selected.json").relative_to(tmp_path))
+
+    results[0]["sha256"] = "wrong"
+    manifest.write_text(json.dumps({"results": results, "errors": []}), encoding="utf-8")
+    with pytest.raises(ValueError, match="modifiée"):
+        aggregation.discover_and_load({}, allow_missing=False)
+
+
+def test_final_aggregation_rejects_partial_manifest(tmp_path, monkeypatch):
+    raw_dir = tmp_path / "data" / "raw"
+    raw_dir.mkdir(parents=True)
+    monkeypatch.setattr(aggregation, "ROOT_DIR", tmp_path)
+    monkeypatch.setattr(aggregation, "RAW_DIR", raw_dir)
+    (raw_dir / "manifest_partial.json").write_text(
+        json.dumps({"results": [], "errors": [{"source": "api", "error": "timeout"}]}),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="incomplète"):
+        aggregation.discover_and_load({}, allow_missing=False)
