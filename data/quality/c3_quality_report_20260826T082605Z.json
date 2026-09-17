@@ -1,0 +1,26 @@
+{
+  "status": "passed",
+  "generated_at": "2026-08-26T08:26:05.605150+00:00",
+  "final_rows": 10,
+  "source_rows": {
+    "file": 10,
+    "api": 1,
+    "bigdata": 10
+  },
+  "checks": {
+    "mandatory_nulls": {
+      "iso2": 0,
+      "iso3": 0,
+      "country_name": 0
+    },
+    "duplicates": {
+      "iso2": 0,
+      "iso3": 0
+    },
+    "invalid_iso2": 0,
+    "invalid_iso3": 0,
+    "negative_population": 0,
+    "non_positive_area": 0,
+    "rows_below_minimum_sources": 0
+  }
+}

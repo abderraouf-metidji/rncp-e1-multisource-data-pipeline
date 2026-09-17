@@ -1,0 +1,8 @@
+{
+  "generated_at": "2026-08-26T08:26:05.605150+00:00",
+  "inputs": {
+    "file": "data\\raw\\file\\countries_iso_20260826T082546Z.csv",
+    "api": "data\\raw\\api\\countries_api_20260826T082545Z.json",
+    "bigdata": "data\\raw\\bigdata\\country_indicators_20260826T082545Z.parquet"
+  }
+}
