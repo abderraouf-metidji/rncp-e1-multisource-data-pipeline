@@ -39,7 +39,7 @@ Le [guide des preuves](guide_preuves.md) donne les noms de captures. Les fichier
 
 ## Points à ne pas surdéclarer
 
-1. Le [rapport C1 PDF](C1_rapport.pdf) est un **brouillon**. Il annonce notamment des monnaies et langues extraites de l'API alors que l'extracteur C1 ne les exporte pas, et sa description de la réponse JSON doit être alignée sur `data.objects` de l'API v5. Les mentions de preuves et de résultats doivent être revérifiées après exécution.
+1. Le [rapport C1 PDF](C1_rapport.pdf) est un **brouillon**. Il annonce notamment des monnaies et langues extraites de l'API alors que l'extracteur C1 ne les exporte pas ; sa description de la réponse JSON doit être alignée sur `data.objects` de l'API v5. Le CSV est maintenant refusé si des codes ISO sont dupliqués, au lieu de les supprimer silencieusement. Les mentions de preuves et de résultats doivent être revérifiées après exécution.
 2. La clé REST Countries `rc_live_demo` renvoie un exemple et ne permet pas l'extraction complète. La commande C1 nécessite une clé personnelle dans `.env`.
 3. Les données d'entrée locales sont un petit exemple reproductible ; DuckDB et Parquet démontrent la technologie, pas un volume massif.
 4. Le script C3 en mode `--allow-missing` sert au développement. Il ne prouve pas l'agrégation des cinq sources.
