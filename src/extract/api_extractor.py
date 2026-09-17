@@ -24,6 +24,14 @@ from src.common import (
 
 load_dotenv(ROOT_DIR / ".env")
 
+RESPONSE_FIELDS = ",".join(
+    (
+        "codes.alpha_2", "codes.alpha_3", "names.common", "names.official",
+        "capitals", "region", "subregion", "population", "area",
+        "currencies", "languages",
+    )
+)
+
 
 class ApiResponseError(RuntimeError):
     """Erreur fonctionnelle retournée par REST Countries."""
@@ -130,6 +138,19 @@ def _find_first(
     return None
 
 
+def _collection_values(value: Any, field: str) -> list[str]:
+    if isinstance(value, dict):
+        return sorted(str(key) for key in value)
+    if not isinstance(value, list):
+        return []
+    values = []
+    for entry in value:
+        label = entry.get(field) if isinstance(entry, dict) else entry
+        if isinstance(label, str) and label.strip():
+            values.append(label.strip())
+    return sorted(set(values))
+
+
 def extract(
     settings: dict,
     logger: logging.Logger,
@@ -165,7 +186,7 @@ def extract(
     while True:
         payload = _request_json(
             url=url,
-            params={"limit": page_size, "offset": offset},
+            params={"limit": page_size, "offset": offset, "response_fields": RESPONSE_FIELDS},
             headers=headers,
             timeout=int(settings["project"]["timeout_seconds"]),
         )
@@ -241,6 +262,8 @@ def extract(
 
         if isinstance(capital, list):
             capital = capital[0] if capital else None
+        if isinstance(capital, dict):
+            capital = capital.get("name")
 
         region = _find_first(
             item,
@@ -273,6 +296,11 @@ def extract(
                 ("area",),
             ],
         )
+        if isinstance(area, dict):
+            area = area.get("kilometers")
+
+        currencies = _collection_values(item.get("currencies"), "code")
+        languages = _collection_values(item.get("languages"), "name")
 
         normalized.append(
             {
@@ -285,6 +313,8 @@ def extract(
                 "subregion": subregion,
                 "population": population,
                 "area_km2": area,
+                "currencies": currencies,
+                "languages": languages,
                 "source_type": "api",
                 "source_url": url,
                 "extracted_at": utc_now_iso(),

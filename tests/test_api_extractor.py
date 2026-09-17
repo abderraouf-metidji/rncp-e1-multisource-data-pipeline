@@ -1,11 +1,15 @@
+import json
+
 import responses
 import pytest
 
 from src.common import (
+    ROOT_DIR,
     configure_logging,
     load_settings,
 )
-from src.extract.api_extractor import extract
+from src.extract.api_extractor import RESPONSE_FIELDS, extract
+from src.transform.aggregate_countries import standardize_api
 
 
 @responses.activate
@@ -16,7 +20,6 @@ def test_api_extraction_succeeds(monkeypatch):
     responses.get(
         settings["sources"]["api"]["url"],
         json={
-            "success": True,
             "data": {
                 "objects": [
                     {
@@ -28,15 +31,13 @@ def test_api_extraction_succeeds(monkeypatch):
                             "common": "France",
                             "official": "French Republic",
                         },
-                        "capital": ["Paris"],
-                        "geography": {
-                            "region": "Europe",
-                            "subregion": "Western Europe",
-                            "area": 551695,
-                        },
-                        "demographics": {
-                            "population": 68000000,
-                        },
+                        "capitals": [{"name": "Paris"}],
+                        "region": "Europe",
+                        "subregion": "Western Europe",
+                        "area": {"kilometers": 551695, "miles": 213011},
+                        "population": 68000000,
+                        "currencies": [{"code": "EUR", "name": "Euro"}],
+                        "languages": [{"iso639_3": "fra", "name": "French"}],
                     }
                 ],
                 "meta": {
@@ -60,6 +61,15 @@ def test_api_extraction_succeeds(monkeypatch):
 
     assert result["rows"] == 1
     assert result["status"] == "success"
+    output = ROOT_DIR / result["output_file"]
+    record = json.loads(output.read_text(encoding="utf-8"))[0]
+    assert record["capital"] == "Paris"
+    assert record["area_km2"] == 551695
+    assert record["currencies"] == ["EUR"]
+    assert record["languages"] == ["French"]
+    standardized = standardize_api(output, {})
+    assert standardized.loc[0, "currencies"] == "EUR"
+    assert standardized.loc[0, "languages"] == "French"
 
 
 @responses.activate
@@ -71,12 +81,12 @@ def test_api_extraction_reads_all_pages(monkeypatch):
     responses.get(
         url,
         json={"data": {"objects": [{"codes": {"alpha_2": "FR"}, "names": {"common": "France"}}], "meta": {"more": True}}},
-        match=[responses.matchers.query_param_matcher({"limit": "1", "offset": "0"})],
+        match=[responses.matchers.query_param_matcher({"limit": "1", "offset": "0", "response_fields": RESPONSE_FIELDS})],
     )
     responses.get(
         url,
         json={"data": {"objects": [{"codes": {"alpha_2": "DE"}, "names": {"common": "Germany"}}], "meta": {"more": False}}},
-        match=[responses.matchers.query_param_matcher({"limit": "1", "offset": "1"})],
+        match=[responses.matchers.query_param_matcher({"limit": "1", "offset": "1", "response_fields": RESPONSE_FIELDS})],
     )
 
     result = extract(settings, configure_logging(settings["output"]["log_file"]))
