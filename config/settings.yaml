@@ -5,7 +5,8 @@ project:
   retries: 3
 sources:
   api:
-    url: "https://api.restcountries.com/countries"
+    url: "https://api.restcountries.com/countries/v5"
+    page_size: 100
   scraping:
     url: "https://en.wikipedia.org/wiki/List_of_countries_and_dependencies_by_population"
     table_id: "thetable"

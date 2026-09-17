@@ -81,6 +81,9 @@ def _request_json(
             f"Début de la réponse : {response.text[:500]}"
         ) from exc
 
+    if not isinstance(payload, dict):
+        raise ApiResponseError("La réponse JSON doit être un objet")
+
     if payload.get("success") is False:
         raise ApiResponseError(
             "REST Countries a retourné une erreur fonctionnelle. "
@@ -133,13 +136,17 @@ def extract(
 ) -> dict:
     cfg = settings["sources"]["api"]
 
-    api_key = os.getenv(
-        "RESTCOUNTRIES_API_KEY",
-        "rc_live_demo",
-    )
+    api_key = os.getenv("RESTCOUNTRIES_API_KEY", "").strip()
+    if not api_key or api_key in {"rc_live_demo", "replace_with_your_api_key"}:
+        raise ValueError(
+            "RESTCOUNTRIES_API_KEY doit contenir une vraie cle API : "
+            "la cle de demonstration ne retourne qu'un exemple."
+        )
 
     url = str(cfg["url"]).strip()
-    limit = int(cfg.get("limit", 250))
+    page_size = int(cfg.get("page_size", 100))
+    if not 1 <= page_size <= 100:
+        raise ValueError("page_size doit etre compris entre 1 et 100")
 
     headers = {
         "Authorization": f"Bearer {api_key}",
@@ -147,40 +154,36 @@ def extract(
         "User-Agent": settings["project"]["user_agent"],
     }
 
-    params = {
-        "limit": limit,
-    }
-
     logger.info(
-        "API | demarrage | url=%s | limit=%s",
+        "API | demarrage | url=%s | page_size=%s",
         url,
-        limit,
+        page_size,
     )
 
-    payload = _request_json(
-        url=url,
-        params=params,
-        headers=headers,
-        timeout=int(
-            settings["project"]["timeout_seconds"]
-        ),
-    )
-
-    data = payload.get("data")
-
-    if not isinstance(data, dict):
-        raise ApiResponseError(
-            "La propriété 'data' est absente "
-            "ou n'est pas un objet JSON."
+    objects: list[Any] = []
+    offset = 0
+    while True:
+        payload = _request_json(
+            url=url,
+            params={"limit": page_size, "offset": offset},
+            headers=headers,
+            timeout=int(settings["project"]["timeout_seconds"]),
         )
-
-    objects = data.get("objects")
-
-    if not isinstance(objects, list):
-        raise ApiResponseError(
-            "La propriété 'data.objects' est absente "
-            "ou n'est pas une liste."
-        )
+        data = payload.get("data")
+        if not isinstance(data, dict):
+            raise ApiResponseError("La propriété 'data' est absente ou invalide")
+        page_objects = data.get("objects")
+        meta = data.get("meta")
+        if not isinstance(page_objects, list) or not isinstance(meta, dict):
+            raise ApiResponseError("La réponse doit contenir data.objects et data.meta")
+        if not isinstance(meta.get("more"), bool):
+            raise ApiResponseError("La réponse doit contenir data.meta.more")
+        if meta.get("more") and not page_objects:
+            raise ApiResponseError("Pagination incohérente : page vide avec meta.more=true")
+        objects.extend(page_objects)
+        if not meta.get("more"):
+            break
+        offset += len(page_objects)
 
     normalized: list[dict[str, Any]] = []
 

@@ -22,6 +22,11 @@ pip install -r requirements.txt
 Copy-Item .env.example .env
 ```
 
+Renseigner `RESTCOUNTRIES_API_KEY` dans `.env` avec une cle personnelle REST Countries.
+La cle de demonstration `rc_live_demo` ne fournit qu'un exemple et ne permet pas
+d'extraire le referentiel complet. L'extracteur utilise l'API v5 et parcourt
+toutes les pages avec une taille de page de 100 au maximum.
+
 ## Demarrer PostgreSQL
 
 ```bash
