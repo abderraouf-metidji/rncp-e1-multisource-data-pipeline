@@ -1,4 +1,6 @@
-# Guide de constitution des preuves C1
+# Guide de constitution des preuves E1
+
+Ce guide complète la [synthèse E1](E1_synthese.md) et les guides C2 à C5. Capturer uniquement des exécutions réelles et indiquer la date, la commande et le résultat observé.
 
 ## Nommage conseille
 
@@ -12,6 +14,8 @@
 - `08_logs_execution.png`
 - `09_tests_pytest.png`
 - `10_historique_git.png`
+
+Pour les autres compétences, classer les captures dans `docs/preuves/C2/`, `C3/`, `C4/` et `C5/` : requêtes et plan SQL, jeu consolidé et rapport qualité, chargement et audit PostgreSQL, puis requêtes API authentifiées et refus 401.
 
 ## Regle
 

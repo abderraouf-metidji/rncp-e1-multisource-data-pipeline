@@ -6,14 +6,7 @@ Démontrer plusieurs requêtes SQL réellement utilisées, dont une requête com
 
 ## Préparation de la base
 
-Après le démarrage de PostgreSQL :
-
-```powershell
-docker compose exec -T postgres psql -U rncp -d countries < database/c2_schema_extension.sql
-docker compose exec -T postgres psql -U rncp -d countries < database/indexes.sql
-```
-
-Alternative PowerShell fiable :
+Après le démarrage de PostgreSQL, dans PowerShell :
 
 ```powershell
 Get-Content .\database\c2_schema_extension.sql -Raw |

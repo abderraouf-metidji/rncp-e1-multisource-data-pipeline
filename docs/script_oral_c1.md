@@ -1,8 +1,8 @@
 # Script oral C1 - cible 3 minutes
 
-J'ai construit un pipeline automatise qui collecte des informations de meme nature, les pays, depuis cinq familles de sources. La cle commune est le code ISO.
+J'ai construit un pipeline automatise qui collecte des informations de meme nature, les pays, depuis cinq familles de sources. Les codes ISO servent au rapprochement quand ils sont presents ; le scraping demande une correspondance par nom en C3.
 
-La premiere source est l'API REST Countries. Le script realise un appel HTTP, controle le statut, applique des tentatives automatiques en cas d'erreur reseau et conserve la reponse normalisee en JSON.
+La premiere source est l'API REST Countries v5. Avec une cle personnelle, le script parcourt les pages, controle le statut, applique des tentatives automatiques en cas d'erreur reseau et conserve une selection de champs en JSON.
 
 La deuxieme source est un tableau HTML public listant les populations. Je conserve une copie de la page brute, puis BeautifulSoup localise le tableau et pandas transforme les lignes HTML en donnees structurees.
 

@@ -17,19 +17,19 @@ Chaque ressource métier possède : liste paginée, lecture par identifiant, cr�
 
 ## Installation
 
-Ajouter `requirements_c5.txt` aux dépendances existantes, ou exécuter :
+Installer toutes les dépendances depuis le fichier unique à la racine :
 
 ```powershell
-pip install -r requirements_c5.txt
+python -m pip install -r requirements.txt
 ```
 
-Copier les variables sans publier les secrets :
+Si `.env` n'existe pas encore, copier le modèle sans publier les secrets :
 
 ```powershell
-Copy-Item .env.c5.example .env
+Copy-Item .env.example .env
 ```
 
-Sous PowerShell, charger les variables pour la session :
+Sous PowerShell, charger les variables pour la session. Le module C5 lit les variables du processus au démarrage ; il ne charge pas automatiquement `.env` :
 
 ```powershell
 $env:DATABASE_URL = "postgresql+psycopg2://rncp:rncp@localhost:5432/countries"

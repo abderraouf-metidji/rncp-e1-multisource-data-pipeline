@@ -5,9 +5,13 @@ pyarrow==18.1.0
 psycopg2-binary==2.9.10
 PyYAML==6.0.2
 requests==2.32.3
-SQLAlchemy==2.0.36
+SQLAlchemy==2.0.43
 tenacity==9.0.0
-pytest==8.3.4
+pytest==8.4.1
 responses==0.25.3
 python-dotenv==1.0.1
 lxml
+fastapi==0.116.1
+uvicorn[standard]==0.35.0
+pydantic==2.11.7
+httpx==0.28.1
