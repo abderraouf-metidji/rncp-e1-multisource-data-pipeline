@@ -4,7 +4,7 @@ J'ai construit un pipeline automatise qui collecte des informations de meme natu
 
 La premiere source est l'API REST Countries v5. Avec une cle personnelle, le script parcourt les pages, controle le statut, applique des tentatives automatiques en cas d'erreur reseau et conserve une selection de champs en JSON.
 
-La deuxieme source est un tableau HTML public listant les populations. Je conserve une copie de la page brute, puis BeautifulSoup localise le tableau et pandas transforme les lignes HTML en donnees structurees.
+La deuxieme source est un tableau HTML public listant les populations. Je conserve une copie de la page brute, puis BeautifulSoup repere les colonnes pays et population et lit directement le texte des cellules. Le total mondial est exclu et les populations restent des entiers exacts.
 
 La troisieme source est un fichier CSV ISO. Le script controle l'encodage, les colonnes obligatoires, les valeurs manquantes et les doublons.
 

@@ -2,15 +2,12 @@ from __future__ import annotations
 
 import logging
 import re
-from pathlib import Path
 
-import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from src.common import ROOT_DIR, atomic_write_json, build_manifest, timestamp_slug, utc_now_iso
-from io import StringIO
 
 
 @retry(
@@ -26,8 +23,18 @@ def _download(url: str, headers: dict[str, str], timeout: int) -> str:
 
 
 def _clean_integer(value: str) -> int | None:
-    digits = re.sub(r"[^0-9]", "", str(value))
-    return int(digits) if digits else None
+    cleaned = re.sub(r"[\s,\u00a0\u202f]", "", re.sub(r"\[[^]]*\]", "", value))
+    return int(cleaned) if cleaned.isdecimal() else None
+
+
+def _table_columns(table) -> tuple[int, int] | None:
+    header = table.find("tr")
+    if header is None:
+        return None
+    labels = [cell.get_text(" ", strip=True).lower() for cell in header.find_all(["th", "td"], recursive=False)]
+    country = next((i for i, label in enumerate(labels) if "country" in label or "location" in label), None)
+    population = next((i for i, label in enumerate(labels) if "population" in label), None)
+    return (country, population) if country is not None and population is not None else None
 
 
 def extract(settings: dict, logger: logging.Logger) -> dict:
@@ -43,35 +50,43 @@ def extract(settings: dict, logger: logging.Logger) -> dict:
     html_path.write_text(html, encoding="utf-8")
 
     soup = BeautifulSoup(html, "html.parser")
-    table = soup.find("table", id=cfg.get("table_id")) or soup.find("table", class_="wikitable")
-    if table is None:
-        raise ValueError("Aucun tableau de population detecte dans la page HTML")
-
-    frames = pd.read_html(StringIO(str(table)))
-    if not frames:
-        raise ValueError("Le tableau HTML n'a produit aucune donnee")
-    frame = frames[0]
-    frame.columns = [str(col).lower().replace(" ", "_") for col in frame.columns]
-
-    country_col = next((c for c in frame.columns if "country" in c or "location" in c), None)
-    population_col = next((c for c in frame.columns if "population" in c), None)
-    if country_col is None or population_col is None:
-        raise ValueError(f"Colonnes attendues absentes: {list(frame.columns)}")
+    preferred = soup.find("table", id=cfg.get("table_id")) if cfg.get("table_id") else None
+    candidates = [preferred] if preferred is not None else []
+    candidates.extend(table for table in soup.select("table.wikitable") if table is not preferred)
+    selected = None
+    for table in candidates:
+        columns = _table_columns(table)
+        if columns is not None:
+            selected = (table, columns)
+            break
+    if selected is None:
+        raise ValueError("Aucun tableau avec colonnes pays et population detecte")
+    table, (country_col, population_col) = selected
 
     records = []
-    for _, row in frame.iterrows():
-        country = re.sub(r"\[[^]]*\]", "", str(row[country_col])).strip()
-        if not country or country.lower() == "nan":
+    for row in table.find_all("tr")[1:]:
+        cells = row.find_all(["th", "td"], recursive=False)
+        if len(cells) <= max(country_col, population_col):
+            continue
+        country = re.sub(r"\[[^]]*\]", "", cells[country_col].get_text(" ", strip=True)).strip()
+        if not country or country.casefold() == "world":
+            continue
+        population = _clean_integer(cells[population_col].get_text(" ", strip=True))
+        if population is None:
+            logger.warning("SCRAPING | population invalide | pays=%s", country)
             continue
         records.append(
             {
                 "country_name": country,
-                "population_scraped": _clean_integer(row[population_col]),
+                "population_scraped": population,
                 "source_type": "scraping",
                 "source_url": cfg["url"],
                 "extracted_at": utc_now_iso(),
             }
         )
+
+    if not records:
+        raise ValueError("Le tableau HTML n'a produit aucun pays valide")
 
     output = raw_dir / f"countries_scraping_{stamp}.json"
     atomic_write_json(records, output)
