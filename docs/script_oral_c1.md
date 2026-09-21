@@ -10,6 +10,6 @@ La troisieme source est un fichier CSV ISO. Le script controle l'encodage, les c
 
 La quatrieme source est PostgreSQL, lance avec Docker Compose. La requete est parametree, limitee aux colonnes utiles et la connexion est fermee proprement.
 
-La cinquieme source repose sur un fichier Parquet interroge avec DuckDB. La requete projette uniquement les colonnes utiles et applique les filtres avant l'export.
+La cinquieme source repose sur un fichier Parquet immuable interroge avec DuckDB. Le script controle le schema, projette uniquement les colonnes utiles et applique les filtres avant l'export RAW compresse.
 
 Toutes les sorties sont horodatees. Un manifeste enregistre le nombre de lignes, la taille, l'empreinte SHA-256 et les erreurs. Le projet est versionne avec Git et teste avec pytest.

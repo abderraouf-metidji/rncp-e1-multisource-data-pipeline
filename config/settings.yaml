@@ -12,7 +12,6 @@ sources:
   file:
     path: "data/input/countries_iso.csv"
   bigdata:
-    input_csv: "data/input/country_indicators.csv"
     parquet_path: "data/input/country_indicators.parquet"
     limit: 10000
 output:

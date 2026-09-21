@@ -3,28 +3,37 @@ from __future__ import annotations
 import logging
 
 import duckdb
-import pandas as pd
 
 from src.common import ROOT_DIR, build_manifest, timestamp_slug
+
+REQUIRED_COLUMNS = {"iso3", "country_name", "year", "population", "area_km2", "gdp_usd"}
+
+
+def validate_source(connection: duckdb.DuckDBPyConnection, parquet_path: str) -> None:
+    columns = {
+        row[0]
+        for row in connection.execute(
+            "DESCRIBE SELECT * FROM read_parquet(?)", [parquet_path]
+        ).fetchall()
+    }
+    missing = REQUIRED_COLUMNS.difference(columns)
+    if missing:
+        raise ValueError(f"Colonnes Parquet obligatoires absentes: {sorted(missing)}")
 
 
 def extract(settings: dict, logger: logging.Logger) -> dict:
     cfg = settings["sources"]["bigdata"]
-    source_csv = ROOT_DIR / cfg["input_csv"]
     parquet_path = ROOT_DIR / cfg["parquet_path"]
-    logger.info("BIGDATA | demarrage | %s", source_csv)
-    if not source_csv.exists():
-        raise FileNotFoundError(f"Fichier indicateurs introuvable: {source_csv}")
+    limit = int(cfg["limit"])
+    logger.info("BIGDATA | demarrage | %s", parquet_path)
+    if not parquet_path.is_file():
+        raise FileNotFoundError(f"Fichier Parquet introuvable: {parquet_path}")
+    if limit < 1:
+        raise ValueError("La limite Big Data doit être strictement positive")
 
-    parquet_path.parent.mkdir(parents=True, exist_ok=True)
     connection = duckdb.connect(database=":memory:")
     try:
-        source_sql = str(source_csv).replace("'", "''")
-        parquet_sql = str(parquet_path).replace("'", "''")
-        connection.execute(
-            f"COPY (SELECT * FROM read_csv_auto('{source_sql}')) "
-            f"TO '{parquet_sql}' (FORMAT PARQUET, COMPRESSION ZSTD)"
-        )
+        validate_source(connection, str(parquet_path))
         frame = connection.execute(
             """
             SELECT iso3, country_name, year, population, area_km2, gdp_usd
@@ -33,10 +42,13 @@ def extract(settings: dict, logger: logging.Logger) -> dict:
             ORDER BY population DESC
             LIMIT ?
             """,
-            [str(parquet_path), int(cfg["limit"])],
+            [str(parquet_path), limit],
         ).fetch_df()
     finally:
         connection.close()
+
+    if frame.empty:
+        raise ValueError("La requête DuckDB n'a retourné aucun indicateur valide")
 
     output = ROOT_DIR / settings["output"]["raw_directory"] / "bigdata" / f"country_indicators_{timestamp_slug()}.parquet"
     output.parent.mkdir(parents=True, exist_ok=True)
