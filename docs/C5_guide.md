@@ -29,7 +29,7 @@ Si `.env` n'existe pas encore, copier le modèle sans publier les secrets :
 Copy-Item .env.example .env
 ```
 
-Sous PowerShell, charger les variables pour la session. Le module C5 lit les variables du processus au démarrage ; il ne charge pas automatiquement `.env` :
+Le module C5 charge `.env` au démarrage. Les variables déjà présentes dans le processus restent prioritaires. Sous PowerShell, elles peuvent aussi être définies explicitement pour la session :
 
 ```powershell
 $env:DATABASE_URL = "postgresql+psycopg2://rncp:rncp@localhost:5432/countries"
@@ -74,6 +74,7 @@ curl.exe -u "$env:API_USERNAME`:$env:API_PASSWORD" `
 - erreurs 404, 409 et 422 explicites ;
 - pagination limitée à 500 lignes ;
 - aucune clé dans Git.
+- démarrage fermé : sans nom d'utilisateur et mot de passe d'au moins 12 caractères, les routes protégées répondent `503` ;
 
 HTTP Basic est suffisant pour la démonstration locale C5, à condition d'utiliser HTTPS dans un véritable environnement réseau. Pour une mise en production, OAuth2/OIDC ou des jetons courts seraient préférables.
 

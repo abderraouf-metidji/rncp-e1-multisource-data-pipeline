@@ -27,7 +27,7 @@ Copy-Item .env.example .env
 
 Sur Linux/macOS, activer l'environnement avec `source .venv/bin/activate` et copier le fichier avec `cp .env.example .env`. Renseigner ensuite `RESTCOUNTRIES_API_KEY` et `API_PASSWORD` dans `.env`. La clé `rc_live_demo` ne fournit qu'un exemple : elle ne permet pas d'extraire tous les pays. Ne jamais committer `.env`.
 
-L'API C5 lit actuellement ses identifiants dans les **variables d'environnement du processus** ; copier `.env` ne suffit pas pour elle. En PowerShell, charger les valeurs de `DATABASE_URL`, `API_USERNAME` et `API_PASSWORD` dans la session avant de lancer `uvicorn` (voir le [guide C5](docs/C5_guide.md)).
+L'API C5 charge `.env` au démarrage et donne priorité aux variables du processus. Sans identifiants valides et mot de passe d'au moins 12 caractères, les routes protégées refusent l'accès (voir le [guide C5](docs/C5_guide.md)).
 
 ## Exécution par étape
 

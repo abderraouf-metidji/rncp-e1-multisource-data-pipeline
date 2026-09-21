@@ -12,6 +12,11 @@ security = HTTPBasic()
 
 
 def require_auth(credentials: Annotated[HTTPBasicCredentials, Depends(security)]) -> str:
+    if not settings.auth_is_configured():
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Authentification API non configurée",
+        )
     username_ok = secrets.compare_digest(credentials.username.encode(), settings.api_username.encode())
     password_ok = secrets.compare_digest(credentials.password.encode(), settings.api_password.encode())
     if not (username_ok and password_ok):

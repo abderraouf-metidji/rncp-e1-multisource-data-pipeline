@@ -44,7 +44,7 @@ Le [guide des preuves](guide_preuves.md) donne les noms de captures. Les fichier
 3. Les données d'entrée locales sont un petit exemple reproductible ; DuckDB interroge directement un Parquet immuable et vérifie son schéma, mais ce jeu démontre la technologie et non un volume massif.
 4. Le script C3 en mode `--allow-missing` sert au développement. Il ne prouve pas l'agrégation des cinq sources. Le mode final utilise le dernier manifeste C1 complet et vérifie les empreintes des cinq fichiers retenus.
 5. Les tests C2, C4 et C5 contrôlent principalement les contrats et structures sans PostgreSQL réel. Capturer séparément une exécution de bout en bout.
-6. Pour C5, HTTP Basic convient à une démonstration locale. Dès que l'API est exposée sur un réseau, utiliser HTTPS et des identifiants non triviaux.
+6. Pour C5, HTTP Basic convient à une démonstration locale. L'API refuse désormais les routes protégées si les identifiants ne sont pas configurés ou si le mot de passe fait moins de 12 caractères. Dès que l'API est exposée sur un réseau, utiliser HTTPS.
 
 ## Préparation de l'oral
 
